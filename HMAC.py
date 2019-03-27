@@ -17,7 +17,7 @@ def MyencryptMAC(message,EncKey, HMACKey):
 
         IV = os.urandom(IV_LENGTH_BITS)
   #create a cipher that combines the AES algorithm and CBC mode
-        encryptor = Ciper(algorithms.AES(EncKey),modes.CBC(IV), backend = defau$
+        encryptor = Ciper(algorithms.AES(EncKey),modes.CBC(IV), backend = default)
         cipherText = encryptor.update(padEnc) + encryptor.finalize()
 
         #create HMAC tag(SHA256) and update tag with  cipherTex
