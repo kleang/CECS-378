@@ -22,6 +22,12 @@ def MyfileEncrypt(filepath):
         ext = splitPath[1]
         file = open(filepath, "rb")
         fileBytes = file.read()
+        file.close()
+	C, IV = MyEncrypt(fileBytes, key)
+	file = open(filepath, "wb")
+	file.write(C)
+	file.close()
+	return C, IV, key, ext
 
 def MyDecrypt(ciphertext, key, IV):
         decrypt = Cipher(algorithms.AES(key), modes.CBC(IV), backend = default_backend()).decryptor()
