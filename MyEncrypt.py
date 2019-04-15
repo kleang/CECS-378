@@ -37,10 +37,9 @@ def MyFileEncrypt(filepath):
 
 def MyDecrypt(ciphertext, key, IV):
         decrypt = Cipher(algorithms.AES(key), modes.CBC(IV), backend = default_backend()).decryptor()
-        message = decryptor.update(ciphertext) + decryptor.finalize()
+        message = decrypt.update(ciphertext) + decrypt.finalize()
         unpad = padding.PKCS7(PAD_LENGTH).unpadder()
-        message = unpadder.update(message)
-        message = message + unpadder.finalize()
+        message = unpad.update(message) + unpad.finalize()
         return message
 
 def MyFileDecrypt(filepath, key, IV, ext):
@@ -48,7 +47,11 @@ def MyFileDecrypt(filepath, key, IV, ext):
         content = file.read()
         file.close()
         message = MyDecrypt(content, key, IV)
+        file = open(filepath, "wb")
+        file.write(message)
+        file.close()
         return message, key, IV
 
 filepath = "text.txt"
 C, IV, key, ext = MyFileEncrypt(filepath)
+MyFileDecrypt(filepath, key, IV, ext)
