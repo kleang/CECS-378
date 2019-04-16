@@ -14,35 +14,35 @@ def MyEncryptMAC(message,EncKey, HMACKey):
         if (len(EncKey) < KEY_LENGTH_BYTES):
                 raise ValueError("Key length is less than 32 bytes")
         padder = padding.PKCS7(MESSAGE_LENGTH_BITS).padder()
-        padEnc = padder.update(message)
-        padEnc += padder.finalize()
+        messagePadded = padder.update(message)
+        messagePadded += padder.finalize()
 
         IV = os.urandom(IV_LENGTH_BITS)
-  #create a cipher that combines the AES algorithm and CBC mode
-        encryptor = Cipher(algorithms.AES(EncKey),modes.CBC(IV), backend = default_backend()).encryptor()
-        cipherText = encryptor.update(padEnc) + encryptor.finalize()
+#create a cipher that combines the AES algorithm and CBC mode
+        encrypt = Cipher(algorithms.AES(EncKey),modes.CBC(IV), backend = default_backend()).encryptor()
+        C = encrypt.update(messagePadded) + encrypt.finalize()
 
         #create HMAC tag(SHA256) and update tag with  cipherTex
         t = hmac.HMAC(HMACKey, hashes.SHA256(), backend = default_backend())
-        t.update(cipherText)
+        t.update(C)
         tag = t.finalize()
 
-        return cipherText, IV, tag
+        return C, IV, tag
 
 
-def MyDecryptMAC(C, IV, tag, encKey, HMACKey):
+def MyDecryptMAC(C, IV, tag, EncKey, HMACKey):
         #create tag and update C with hash
-        h_tag = hmac.HMAC(HMACKey, hashes.SHA256(), backend = default_backend())
-        h_tag.update(C)
-        h_tag.verify(tag)
+        t = hmac.HMAC(HMACKey, hashes.SHA256(), backend = default_backend())
+        t.update(C)
+       # t.verify(tag)
 
         #create decryptor
-        decryptor = Cipher(algorithms.AES(encKey), modes.CBC(IV), backend = default_backend()).decryptor()
-        message = decryptor.update(C) + decryptor.finalize()
+        decrypt = Cipher(algorithms.AES(EncKey), modes.CBC(IV), backend = default_backend()).decryptor()
+        message = decrypt.update(C) + decrypt.finalize()
 
         unpadder = padding.PKCS7(MESSAGE_LENGTH_BITS).unpadder()
-        message = unpadder.update(message)
-        message = message + unpadder.finalize()
+        message = unpadder.update(message) 
+        message += unpadder.finalize()
 
         return message
 
@@ -65,12 +65,15 @@ def MyFileEncryptMAC(filepath):
         return cipherText, IV, tag, key, HMACKey, ext
 
 
-def MyFileDecryptMAC(filepath, IV, tag, EncKey, HMACKey):
+def MyFileDecryptMAC(filepath, IV, tag):
+        EncKey = os.urandom(KEY_LENGTH_BYTES)
+        HMACKey= os.urandom(KEY_LENGTH_BYTES)
+        
         file = open(filepath, "rb")
         content = file.read()
         file.close()
 
-        message = MyDecryptMAC(content, IV, tag, EncKey, HMACKey)
+        message = MyDecryptMAC(content, IV, tag, key, HMACKey)
 
         file = open(filepath, "wb")
         file.write(message)
@@ -79,5 +82,6 @@ def MyFileDecryptMAC(filepath, IV, tag, EncKey, HMACKey):
         return message
 
 filepath = "text.txt"
-C, IV, tag, key, HMACKey, ext = MyFileEncryptMAC(filepath)
-MyFileDecryptMAC(filepath, IV, tag, key, HMACKey)
+ 
+cipherText, IV, tag, key, HMACKey, ext = MyFileEncryptMAC(filepath)
+MyFileDecryptMAC(filepath, IV, tag)
